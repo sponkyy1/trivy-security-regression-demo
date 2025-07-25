@@ -31,6 +31,7 @@
       const response = await fetch('data.csv?t=' + new Date().getTime());
       const data = await response.text();
 
+      console.log('RAW CSV:', data);
       const rows = data.split('\n').slice(1).filter(Boolean);
       const labels = [];
       const critical = [], high = [], medium = [], low = [];
