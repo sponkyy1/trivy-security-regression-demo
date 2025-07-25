@@ -14,7 +14,7 @@
       const response = await fetch('data.csv');
       const data = await response.text();
 
-      const rows = data.split('\\n').slice(1).filter(Boolean);
+      const rows = data.split('\n').slice(1).filter(Boolean);
       const labels = [];
       const critical = [], high = [], medium = [], low = [];
 
