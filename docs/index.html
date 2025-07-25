@@ -85,14 +85,13 @@
                 text: 'Timestamp'
               },
               ticks: {
-                maxRotation: 45,
-                minRotation: 45
+                callback: function(value, index, ticks) {
+                  const label = this.getLabelForValue(value);
+                  return label.slice(5, 16); // "MM-DD HH:mm"
+                },
+                maxRotation: 0,
+                minRotation: 0
               }
-            }
-          },
-          elements: {
-            point: {
-              radius: 5
             }
           }
         }
