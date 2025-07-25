@@ -30,7 +30,7 @@ jobs:
           trivy image --format json -o trivy-results/result.json insecure-app
 
       - name: Archive results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: trivy-report
           path: trivy-results/result.json
