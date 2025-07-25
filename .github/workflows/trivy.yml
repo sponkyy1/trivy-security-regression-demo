@@ -1,18 +1,21 @@
-permissions:
-  contents: write
-
-name: Trivy with CSV export
+name: Trivy Security Scan & Dashboard Update
 
 on:
   push:
     branches: [main]
+  schedule:
+    - cron: '0 12 * * *' # optional: щоденний запуск
+
+permissions:
+  contents: write
 
 jobs:
   scan:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
       - name: Build Docker image
         run: docker build -t insecure-app .
@@ -26,19 +29,22 @@ jobs:
           mkdir -p trivy-results
           trivy image --format json -o trivy-results/result.json insecure-app
 
-      - name: Convert Trivy result to CSV
-        run: |
-          python3 parse_trivy.py
+      - name: Parse Trivy JSON to CSV
+        run: python3 parse_trivy.py
 
-      - name: Copy history.csv to docs/data.csv
+      - name: Copy CSV to dashboard directory
         run: |
           mkdir -p docs
           cp trivy-results/history.csv docs/data.csv
 
-      - name: Commit and push data.csv to main
+      - name: Show CSV content
+        run: cat docs/data.csv
+
+      - name: Commit updated data.csv to GitHub
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
+          git pull origin main
           git add docs/data.csv
-          git commit -m "Update data.csv from Trivy scan" || echo "No changes"
-          git push
+          git commit -m "Update Trivy dashboard data [skip ci]" || echo "Nothing to commit"
+          git push origin main
