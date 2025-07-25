@@ -4,10 +4,29 @@
   <meta charset="UTF-8">
   <title>Trivy Vulnerability Trends</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 2rem;
+      text-align: center;
+    }
+    canvas {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 90%;
+      margin: auto;
+    }
+    h2 {
+      margin-bottom: 1.5rem;
+    }
+  </style>
 </head>
 <body>
   <h2>Trivy Vulnerability Trend</h2>
-  <canvas id="vulnChart" width="1000" height="400"></canvas>
+  <canvas id="vulnChart" height="400"></canvas>
 
   <script>
     async function drawChart() {
@@ -27,7 +46,8 @@
         low.push(+l);
       }
 
-      new Chart(document.getElementById('vulnChart'), {
+      const ctx = document.getElementById('vulnChart').getContext('2d');
+      new Chart(ctx, {
         type: 'line',
         data: {
           labels,
@@ -76,9 +96,16 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           plugins: {
-            legend: {
-              position: 'bottom'
+            legend: { position: 'bottom' }
+          },
+          layout: {
+            padding: {
+              top: 20,
+              bottom: 30,
+              left: 15,
+              right: 15
             }
           },
           scales: {
@@ -92,9 +119,10 @@
             x: {
               title: {
                 display: true,
-                text: 'Timestamp'
+                text: 'Scan Timestamp'
               },
               ticks: {
+                autoSkip: true,
                 maxRotation: 45,
                 minRotation: 45
               }
