@@ -35,6 +35,7 @@ jobs:
         run: |
           mkdir -p docs
           cp trivy-results/history.csv docs/data.csv
+          cat docs/data.csv
 
       - name: Check contents of docs/
         run: ls -R docs
