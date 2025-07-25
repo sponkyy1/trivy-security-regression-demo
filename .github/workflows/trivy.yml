@@ -29,6 +29,13 @@ jobs:
           mkdir -p trivy-results
           trivy image --format json -o trivy-results/result.json insecure-app
 
+      - name: Restore previous scan history if exists
+        run: |
+          if [ -f docs/data.csv ]; then
+            mkdir -p trivy-results
+            cp docs/data.csv trivy-results/history.csv
+          fi
+
       - name: Parse Trivy JSON to CSV
         run: python3 parse_trivy.py
 
