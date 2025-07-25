@@ -4,36 +4,17 @@
   <meta charset="UTF-8">
   <title>Trivy Vulnerability Trends</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f9;
-      margin: 0;
-      padding: 2rem;
-      text-align: center;
-    }
-    canvas {
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      max-width: 90%;
-      margin: auto;
-    }
-    h2 {
-      margin-bottom: 1.5rem;
-    }
-  </style>
 </head>
 <body>
   <h2>Trivy Vulnerability Trend</h2>
-  <canvas id="vulnChart" height="400"></canvas>
+  <canvas id="vulnChart" width="1000" height="500"></canvas>
 
   <script>
     async function drawChart() {
       const response = await fetch('data.csv');
       const data = await response.text();
 
-      const rows = data.split('\n').slice(1).filter(Boolean);
+      const rows = data.split('\\n').slice(1).filter(Boolean);
       const labels = [];
       const critical = [], high = [], medium = [], low = [];
 
@@ -46,8 +27,7 @@
         low.push(+l);
       }
 
-      const ctx = document.getElementById('vulnChart').getContext('2d');
-      new Chart(ctx, {
+      new Chart(document.getElementById('vulnChart'), {
         type: 'line',
         data: {
           labels,
@@ -56,73 +36,55 @@
               label: 'Critical',
               data: critical,
               borderColor: 'red',
-              backgroundColor: 'rgba(255,0,0,0.1)',
               pointBackgroundColor: 'red',
-              pointRadius: 5,
-              tension: 0.3,
+              pointRadius: 4,
               fill: false
             },
             {
               label: 'High',
               data: high,
               borderColor: 'orange',
-              backgroundColor: 'rgba(255,165,0,0.1)',
               pointBackgroundColor: 'orange',
-              pointRadius: 5,
-              tension: 0.3,
+              pointRadius: 4,
               fill: false
             },
             {
               label: 'Medium',
               data: medium,
               borderColor: 'gold',
-              backgroundColor: 'rgba(255,215,0,0.1)',
               pointBackgroundColor: 'gold',
-              pointRadius: 5,
-              tension: 0.3,
+              pointRadius: 4,
               fill: false
             },
             {
               label: 'Low',
               data: low,
               borderColor: 'green',
-              backgroundColor: 'rgba(0,128,0,0.1)',
               pointBackgroundColor: 'green',
-              pointRadius: 5,
-              tension: 0.3,
+              pointRadius: 4,
               fill: false
             }
           ]
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false,
           plugins: {
             legend: { position: 'bottom' }
-          },
-          layout: {
-            padding: {
-              top: 20,
-              bottom: 30,
-              left: 15,
-              right: 15
-            }
           },
           scales: {
             y: {
               beginAtZero: true,
               title: {
                 display: true,
-                text: 'Number of Vulnerabilities'
+                text: 'Vulnerability Count'
               }
             },
             x: {
               title: {
                 display: true,
-                text: 'Scan Timestamp'
+                text: 'Timestamp'
               },
               ticks: {
-                autoSkip: true,
                 maxRotation: 45,
                 minRotation: 45
               }
