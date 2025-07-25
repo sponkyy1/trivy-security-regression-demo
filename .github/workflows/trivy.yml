@@ -1,45 +1,38 @@
-name: Trivy Scan
+name: Trivy with CSV export
 
 on:
   push:
     branches: [main]
-  pull_request:
 
 jobs:
   scan:
-    name: Trivy Vulnerability Scan
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Build Docker Image
+      - name: Build Docker image
         run: docker build -t insecure-app .
 
       - name: Install Trivy
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
 
-      - name: Run Trivy scan and save report
+      - name: Run Trivy scan
         run: |
           mkdir -p trivy-results
           trivy image --format json -o trivy-results/result.json insecure-app
 
-      - name: Archive results
-        uses: actions/upload-artifact@v4
-        with:
-          name: trivy-report
-          path: trivy-results/result.json
+      - name: Convert Trivy result to CSV
+        run: python3 parse_trivy.py
 
-      - name: Parse Trivy and update CSV
-        run: |
-          python parse_trivy.py
+      - name: Check contents of results
+        run: ls -R trivy-results
 
-      - name: Copy CSV for dashboard
+      - name: Copy history.csv to docs/data.csv
         run: |
           mkdir -p docs
           cp trivy-results/history.csv docs/data.csv
+
+      - name: Check contents of docs/
+        run: ls -R docs
