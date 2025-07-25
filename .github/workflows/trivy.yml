@@ -38,3 +38,8 @@ jobs:
       - name: Parse Trivy and update CSV
         run: |
           python parse_trivy.py
+
+      - name: Copy CSV for dashboard
+        run: |
+          mkdir -p docs
+          cp trivy-results/history.csv docs/data.csv

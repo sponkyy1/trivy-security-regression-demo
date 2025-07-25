@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Trivy Vulnerability Trends</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h2>Trivy Vulnerability Trend</h2>
+  <canvas id="vulnChart" width="1000" height="400"></canvas>
+
+  <script>
+    async function drawChart() {
+      const response = await fetch('data.csv');
+      const data = await response.text();
+
+      const rows = data.split('\\n').slice(1).filter(Boolean);
+      const labels = [];
+      const critical = [], high = [], medium = [], low = [];
+
+      for (const row of rows) {
+        const [timestamp, c, h, m, l] = row.split(',');
+        labels.push(timestamp);
+        critical.push(+c);
+        high.push(+h);
+        medium.push(+m);
+        low.push(+l);
+      }
+
+      new Chart(document.getElementById('vulnChart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Critical', data: critical, borderColor: 'red', fill: false },
+            { label: 'High', data: high, borderColor: 'orange', fill: false },
+            { label: 'Medium', data: medium, borderColor: 'gold', fill: false },
+            { label: 'Low', data: low, borderColor: 'green', fill: false },
+          ]
+        },
+        options: {
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    drawChart();
+  </script>
+</body>
+</html>
