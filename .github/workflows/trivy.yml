@@ -24,7 +24,9 @@ jobs:
           trivy image --format json -o trivy-results/result.json insecure-app
 
       - name: Convert Trivy result to CSV
-        run: python3 parse_trivy.py
+        run: |
+          python3 parse_trivy.py
+          cat trivy-results/history.csv
 
       - name: Check contents of results
         run: ls -R trivy-results
