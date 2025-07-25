@@ -1,37 +1,47 @@
 import json
 import csv
-import os
-from datetime import datetime
+import datetime
+from collections import deque
 
-# Вхідний Trivy JSON-файл
-INPUT_PATH = 'trivy-results/result.json'
-OUTPUT_CSV = 'trivy-results/history.csv'
+# Config
+HISTORY_CSV = "trivy-results/history.csv"
+TRIVY_JSON = "result.json"
+MAX_ROWS = 7
 
-# Ініціалізація лічильника уразливостей
-severity_levels = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
-severity_count = {level: 0 for level in severity_levels}
+# Load Trivy result
+with open(TRIVY_JSON, "r") as f:
+    results = json.load(f)
 
-# Читання Trivy JSON-звіту
-with open(INPUT_PATH, 'r') as f:
-    report = json.load(f)
+# Count vulnerabilities by severity
+counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
+for result in results.get("Results", []):
+    for vuln in result.get("Vulnerabilities", []):
+        severity = vuln.get("Severity")
+        if severity in counts:
+            counts[severity] += 1
 
-# Збір кількості уразливостей
-for result in report.get('Results', []):
-    for vuln in result.get('Vulnerabilities', []):
-        severity = vuln.get('Severity', '').upper()
-        if severity in severity_count:
-            severity_count[severity] += 1
+# Create new row with current timestamp
+timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+new_row = [timestamp, counts["CRITICAL"], counts["HIGH"], counts["MEDIUM"], counts["LOW"]]
 
-# Створення нового рядка
-timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-row = [timestamp] + [severity_count[level] for level in severity_levels]
+# Load existing rows (if any)
+rows = deque(maxlen=MAX_ROWS)
+try:
+    with open(HISTORY_CSV, newline="") as csvfile:
+        reader = csv.reader(csvfile)
+        header = next(reader)  # skip header
+        for row in reader:
+            rows.append(row)
+except FileNotFoundError:
+    header = ["timestamp", "CRITICAL", "HIGH", "MEDIUM", "LOW"]
 
-# Перевірка, чи існує CSV — якщо ні, створити з заголовком
-file_exists = os.path.isfile(OUTPUT_CSV)
-with open(OUTPUT_CSV, 'a', newline='') as csvfile:
+# Append new row
+rows.append(new_row)
+
+# Write back only latest 7 rows
+with open(HISTORY_CSV, "w", newline="") as csvfile:
     writer = csv.writer(csvfile)
-    if not file_exists:
-        writer.writerow(['timestamp'] + severity_levels)
-    writer.writerow(row)
+    writer.writerow(header)
+    writer.writerows(rows)
 
-print(f"✅ Saved scan summary to {OUTPUT_CSV}")
+print(f"Saved scan summary to {HISTORY_CSV}")
