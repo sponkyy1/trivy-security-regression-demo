@@ -14,7 +14,7 @@
       const response = await fetch('data.csv');
       const data = await response.text();
 
-      const rows = data.split('\\n').slice(1).filter(Boolean);
+      const rows = data.split('\n').slice(1).filter(Boolean);
       const labels = [];
       const critical = [], high = [], medium = [], low = [];
 
@@ -37,7 +37,7 @@
               data: critical,
               borderColor: 'red',
               pointBackgroundColor: 'red',
-              pointRadius: 4,
+              pointRadius: 5,
               fill: false
             },
             {
@@ -45,7 +45,7 @@
               data: high,
               borderColor: 'orange',
               pointBackgroundColor: 'orange',
-              pointRadius: 4,
+              pointRadius: 5,
               fill: false
             },
             {
@@ -53,7 +53,7 @@
               data: medium,
               borderColor: 'gold',
               pointBackgroundColor: 'gold',
-              pointRadius: 4,
+              pointRadius: 5,
               fill: false
             },
             {
@@ -61,7 +61,7 @@
               data: low,
               borderColor: 'green',
               pointBackgroundColor: 'green',
-              pointRadius: 4,
+              pointRadius: 5,
               fill: false
             }
           ]
@@ -88,6 +88,11 @@
                 maxRotation: 45,
                 minRotation: 45
               }
+            }
+          },
+          elements: {
+            point: {
+              radius: 5
             }
           }
         }
