@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Trivy Vulnerability Dashboard (Simplified)</title>
+  <title>Trivy Vulnerability Dashboard (BOM Fixed)</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
@@ -39,7 +39,7 @@
         const response = await fetch('data.csv?t=' + new Date().getTime());
         const csv = await response.text();
         const rows = csv.trim().split(/\r?\n/);
-        const headers = rows[0].split(',').map(h => h.trim());
+        const headers = rows[0].replace(/^\uFEFF/, '').split(',').map(h => h.trim());
 
         const timestamps = [];
         const series = [[], [], [], []]; // CRITICAL, HIGH, MEDIUM, LOW
