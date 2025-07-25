@@ -1,3 +1,6 @@
+permissions:
+  contents: write
+
 name: Trivy with CSV export
 
 on:
@@ -26,16 +29,16 @@ jobs:
       - name: Convert Trivy result to CSV
         run: |
           python3 parse_trivy.py
-          cat trivy-results/history.csv
-
-      - name: Check contents of results
-        run: ls -R trivy-results
 
       - name: Copy history.csv to docs/data.csv
         run: |
           mkdir -p docs
           cp trivy-results/history.csv docs/data.csv
-          cat docs/data.csv
 
-      - name: Check contents of docs/
-        run: ls -R docs
+      - name: Commit and push data.csv to main
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add docs/data.csv
+          git commit -m "Update data.csv from Trivy scan" || echo "No changes"
+          git push
