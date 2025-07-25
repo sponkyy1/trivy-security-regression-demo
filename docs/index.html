@@ -2,103 +2,119 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Trivy Vulnerability Trends</title>
+  <title>Trivy Vulnerability Trends - Lines vs Points</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <h2>Trivy Vulnerability Trend</h2>
-  <canvas id="vulnChart" width="1000" height="500"></canvas>
+  <h2>Trivy Vulnerability Trend (Lines)</h2>
+  <canvas id="chartLines" width="1000" height="400"></canvas>
+
+  <h2>Trivy Vulnerability Trend (Points Only)</h2>
+  <canvas id="chartPoints" width="1000" height="400"></canvas>
 
   <script>
-    async function drawChart() {
+    async function fetchData() {
       const response = await fetch('data.csv');
-      const data = await response.text();
-
-      const rows = data.split('\n').slice(1).filter(Boolean);
-      const labels = [];
-      const critical = [], high = [], medium = [], low = [];
+      const text = await response.text();
+      const rows = text.split('\n').slice(1).filter(Boolean);
+      const labels = [], critical = [], high = [], medium = [], low = [];
 
       for (const row of rows) {
         const [timestamp, c, h, m, l] = row.split(',').map(x => x.trim());
-        labels.push(timestamp);
+        labels.push(timestamp.slice(5, 16));  // show as MM-DD HH:mm
         critical.push(+c);
         high.push(+h);
         medium.push(+m);
         low.push(+l);
       }
 
-      new Chart(document.getElementById('vulnChart'), {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [
-            {
-              label: 'Critical',
-              data: critical,
-              borderColor: 'red',
-              pointBackgroundColor: 'red',
-              pointRadius: 5,
-              fill: false
-            },
-            {
-              label: 'High',
-              data: high,
-              borderColor: 'orange',
-              pointBackgroundColor: 'orange',
-              pointRadius: 5,
-              fill: false
-            },
-            {
-              label: 'Medium',
-              data: medium,
-              borderColor: 'gold',
-              pointBackgroundColor: 'gold',
-              pointRadius: 5,
-              fill: false
-            },
-            {
-              label: 'Low',
-              data: low,
-              borderColor: 'green',
-              pointBackgroundColor: 'green',
-              pointRadius: 5,
-              fill: false
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { position: 'bottom' }
+      return { labels, critical, high, medium, low };
+    }
+
+    function createChart(ctxId, showLine = true) {
+      return fetchData().then(({ labels, critical, high, medium, low }) => {
+        const ctx = document.getElementById(ctxId).getContext('2d');
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [
+              {
+                label: 'Critical',
+                data: critical,
+                borderColor: 'red',
+                pointBackgroundColor: 'red',
+                pointRadius: 5,
+                showLine,
+                fill: false
+              },
+              {
+                label: 'High',
+                data: high,
+                borderColor: 'orange',
+                pointBackgroundColor: 'orange',
+                pointRadius: 5,
+                showLine,
+                fill: false
+              },
+              {
+                label: 'Medium',
+                data: medium,
+                borderColor: 'gold',
+                pointBackgroundColor: 'gold',
+                pointRadius: 5,
+                showLine,
+                fill: false
+              },
+              {
+                label: 'Low',
+                data: low,
+                borderColor: 'green',
+                pointBackgroundColor: 'green',
+                pointRadius: 5,
+                showLine,
+                fill: false
+              }
+            ]
           },
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Vulnerability Count'
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: 'bottom' },
+              tooltip: {
+                callbacks: {
+                  title: function(context) {
+                    return 'Time: ' + context[0].label;
+                  }
+                }
               }
             },
-            x: {
-              title: {
-                display: true,
-                text: 'Timestamp'
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: 'Vulnerability Count'
+                }
               },
-              ticks: {
-                callback: function(value, index, ticks) {
-                  const label = this.getLabelForValue(value);
-                  return label.slice(5, 16); // "MM-DD HH:mm"
+              x: {
+                title: {
+                  display: true,
+                  text: 'Timestamp'
                 },
-                maxRotation: 0,
-                minRotation: 0
+                ticks: {
+                  maxRotation: 0,
+                  minRotation: 0
+                }
               }
             }
           }
-        }
+        });
       });
     }
 
-    drawChart();
+    createChart('chartLines', true);
+    createChart('chartPoints', false);
   </script>
 </body>
 </html>
