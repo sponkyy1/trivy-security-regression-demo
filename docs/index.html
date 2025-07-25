@@ -4,114 +4,104 @@
   <meta charset="UTF-8">
   <title>Trivy Vulnerability Trends</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f8f9fa;
-      padding: 2rem;
-      text-align: center;
-    }
-    canvas {
-      background-color: #fff;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      max-width: 1000px;
-      margin: auto;
-    }
-  </style>
 </head>
 <body>
   <h2>Trivy Vulnerability Trend</h2>
-  <canvas id="vulnChart" height="400"></canvas>
-  <div id="error" style="color:red; margin-top:1rem;"></div>
+  <canvas id="vulnChart" width="1000" height="400"></canvas>
 
   <script>
     async function drawChart() {
-      try {
-        const response = await fetch('data.csv?t=' + new Date().getTime());
-        const data = await response.text();
+      const response = await fetch('data.csv');
+      const data = await response.text();
 
-        const rows = data.trim().split(/\r?\n/);
-        rows[0] = rows[0].replace(/^\uFEFF/, ''); // BOM fix
+      const rows = data.split('\n').slice(1).filter(Boolean);
+      const labels = [];
+      const critical = [], high = [], medium = [], low = [];
 
-        const labels = [];
-        const critical = [], high = [], medium = [], low = [];
+      for (const row of rows) {
+        const [timestamp, c, h, m, l] = row.split(',').map(x => x.trim());
+        labels.push(timestamp);
+        critical.push(+c);
+        high.push(+h);
+        medium.push(+m);
+        low.push(+l);
+      }
 
-        for (let i = 1; i < rows.length; i++) {
-          const cells = rows[i].split(',').map(x => x.trim());
-          if (cells.length < 5) continue;
-          labels.push(cells[0]);
-          critical.push(+cells[1]);
-          high.push(+cells[2]);
-          medium.push(+cells[3]);
-          low.push(+cells[4]);
-        }
-
-        const ctx = document.getElementById('vulnChart').getContext('2d');
-        new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: labels,
-            datasets: [
-              {
-                label: 'Critical',
-                data: critical,
-                borderColor: 'rgba(220, 53, 69, 1)',
-                backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0
-              },
-              {
-                label: 'High',
-                data: high,
-                borderColor: 'rgba(255, 193, 7, 1)',
-                backgroundColor: 'rgba(255, 193, 7, 0.1)',
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0
-              },
-              {
-                label: 'Medium',
-                data: medium,
-                borderColor: 'rgba(23, 162, 184, 1)',
-                backgroundColor: 'rgba(23, 162, 184, 0.1)',
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0
-              },
-              {
-                label: 'Low',
-                data: low,
-                borderColor: 'rgba(40, 167, 69, 1)',
-                backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: { position: 'bottom' }
+      new Chart(document.getElementById('vulnChart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Critical',
+              data: critical,
+              borderColor: 'red',
+              backgroundColor: 'rgba(255,0,0,0.1)',
+              pointBackgroundColor: 'red',
+              pointRadius: 5,
+              tension: 0.3,
+              fill: false
             },
-            scales: {
-              y: {
-                beginAtZero: true,
-                title: { display: true, text: 'Number of Vulnerabilities' }
+            {
+              label: 'High',
+              data: high,
+              borderColor: 'orange',
+              backgroundColor: 'rgba(255,165,0,0.1)',
+              pointBackgroundColor: 'orange',
+              pointRadius: 5,
+              tension: 0.3,
+              fill: false
+            },
+            {
+              label: 'Medium',
+              data: medium,
+              borderColor: 'gold',
+              backgroundColor: 'rgba(255,215,0,0.1)',
+              pointBackgroundColor: 'gold',
+              pointRadius: 5,
+              tension: 0.3,
+              fill: false
+            },
+            {
+              label: 'Low',
+              data: low,
+              borderColor: 'green',
+              backgroundColor: 'rgba(0,128,0,0.1)',
+              pointBackgroundColor: 'green',
+              pointRadius: 5,
+              tension: 0.3,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'bottom'
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Number of Vulnerabilities'
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Timestamp'
               },
-              x: {
-                title: { display: true, text: 'Scan Time' },
-                ticks: { maxRotation: 45, minRotation: 45 }
+              ticks: {
+                maxRotation: 45,
+                minRotation: 45
               }
             }
           }
-        });
-      } catch (err) {
-        document.getElementById('error').innerText = "❌ Failed to load or render data: " + err.message;
-        console.error(err);
-      }
+        }
+      });
     }
 
     drawChart();
