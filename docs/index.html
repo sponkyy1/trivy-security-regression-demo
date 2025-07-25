@@ -2,121 +2,92 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Trivy Vulnerability Dashboard</title>
+  <title>Trivy Vulnerability Dashboard (Simplified)</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
       padding: 2rem;
-      background-color: #f8f9fa;
-      color: #333;
+      background-color: #f0f2f5;
     }
     h2 {
       text-align: center;
-      margin-bottom: 2rem;
+      margin-bottom: 1rem;
     }
     canvas {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+      display: block;
+      margin: auto;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    #error {
+      color: red;
+      text-align: center;
+      margin-top: 1rem;
     }
   </style>
 </head>
 <body>
   <h2>Trivy Vulnerability Trend</h2>
-  <canvas id="vulnChart" width="1000" height="400"></canvas>
+  <canvas id="vulnChart" width="960" height="400"></canvas>
+  <div id="error"></div>
 
   <script>
     async function drawChart() {
-      const response = await fetch('data.csv?t=' + new Date().getTime());
-      const data = await response.text();
+      try {
+        const response = await fetch('data.csv?t=' + new Date().getTime());
+        const csv = await response.text();
+        const rows = csv.trim().split(/\r?\n/);
+        const headers = rows[0].split(',').map(h => h.trim());
 
-      console.log('RAW CSV:', data);
+        const timestamps = [];
+        const series = [[], [], [], []]; // CRITICAL, HIGH, MEDIUM, LOW
 
-      const rows = data.trim().split(/\r?\n/).slice(1);
-      const labels = [];
-      const critical = [], high = [], medium = [], low = [];
-
-      for (const row of rows) {
-        const [timestamp, c, h, m, l] = row.split(',').map(x => x.trim());
-        if (timestamp && !isNaN(+c) && !isNaN(+h) && !isNaN(+m) && !isNaN(+l)) {
-          labels.push(timestamp);
-          critical.push(+c);
-          high.push(+h);
-          medium.push(+m);
-          low.push(+l);
-        } else {
-          console.warn('⚠️ Skipped invalid row:', row);
+        for (let i = 1; i < rows.length; i++) {
+          const cells = rows[i].split(',').map(c => c.trim());
+          if (cells.length < 5) continue;
+          timestamps.push(cells[0]);
+          for (let j = 0; j < 4; j++) series[j].push(Number(cells[j+1]));
         }
-      }
 
-      const ctx = document.getElementById('vulnChart').getContext('2d');
-      new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [
-            {
-              label: 'Critical',
-              data: critical,
-              borderColor: 'rgba(220, 53, 69, 1)',
-              backgroundColor: 'rgba(220, 53, 69, 0.1)',
+        const colors = ['red', 'orange', 'gold', 'green'];
+        const labels = ['Critical', 'High', 'Medium', 'Low'];
+
+        const ctx = document.getElementById('vulnChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: timestamps,
+            datasets: series.map((data, i) => ({
+              label: labels[i],
+              data,
+              borderColor: colors[i],
+              backgroundColor: colors[i] + '33',
               fill: true,
               tension: 0.4,
               pointRadius: 0
-            },
-            {
-              label: 'High',
-              data: high,
-              borderColor: 'rgba(255, 193, 7, 1)',
-              backgroundColor: 'rgba(255, 193, 7, 0.1)',
-              fill: true,
-              tension: 0.4,
-              pointRadius: 0
-            },
-            {
-              label: 'Medium',
-              data: medium,
-              borderColor: 'rgba(23, 162, 184, 1)',
-              backgroundColor: 'rgba(23, 162, 184, 0.1)',
-              fill: true,
-              tension: 0.4,
-              pointRadius: 0
-            },
-            {
-              label: 'Low',
-              data: low,
-              borderColor: 'rgba(40, 167, 69, 1)',
-              backgroundColor: 'rgba(40, 167, 69, 0.1)',
-              fill: true,
-              tension: 0.4,
-              pointRadius: 0
-            }
-          ]
-        },
-        options: {
-          plugins: {
-            legend: {
-              position: 'bottom'
-            }
+            }))
           },
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Number of Vulnerabilities'
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: { display: true, text: 'Vulnerabilities' }
+              },
+              x: {
+                title: { display: true, text: 'Timestamp' }
               }
             },
-            x: {
-              title: {
-                display: true,
-                text: 'Scan Timestamp'
-              }
+            plugins: {
+              legend: { position: 'bottom' }
             }
           }
-        }
-      });
+        });
+      } catch (err) {
+        document.getElementById('error').innerText = "❌ Failed to load or render data: " + err.message;
+        console.error(err);
+      }
     }
 
     drawChart();
