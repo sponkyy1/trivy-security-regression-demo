@@ -24,21 +24,25 @@ for result in results.get("Results", []):
 timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 new_row = [timestamp, counts["CRITICAL"], counts["HIGH"], counts["MEDIUM"], counts["LOW"]]
 
-# Читання наявної історії (якщо є)
+# Читання CSV з обробкою порожнього файлу
 rows = deque(maxlen=MAX_ROWS)
-if HISTORY_CSV.exists():
+header = ["timestamp", "CRITICAL", "HIGH", "MEDIUM", "LOW"]
+
+if HISTORY_CSV.exists() and HISTORY_CSV.stat().st_size > 0:
     with HISTORY_CSV.open() as f:
         reader = csv.reader(f)
-        header = next(reader)
-        for row in reader:
-            rows.append(row)
-else:
-    header = ["timestamp", "CRITICAL", "HIGH", "MEDIUM", "LOW"]
+        try:
+            next(reader)  # header
+        except StopIteration:
+            pass  # файл існує, але порожній
+        else:
+            for row in reader:
+                rows.append(row)
 
-# Додавання нового скану
+# Додати новий скан
 rows.append(new_row)
 
-# Запис оновленого CSV
+# Запис у файл
 with HISTORY_CSV.open("w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(header)
