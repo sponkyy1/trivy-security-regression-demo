@@ -2,92 +2,48 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Trivy Vulnerability Dashboard (BOM Fixed)</title>
+  <title>Trivy Vulnerability Trends</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 2rem;
-      background-color: #f0f2f5;
-    }
-    h2 {
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-    canvas {
-      display: block;
-      margin: auto;
-      background-color: #fff;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    #error {
-      color: red;
-      text-align: center;
-      margin-top: 1rem;
-    }
-  </style>
 </head>
 <body>
   <h2>Trivy Vulnerability Trend</h2>
-  <canvas id="vulnChart" width="960" height="400"></canvas>
-  <div id="error"></div>
+  <canvas id="vulnChart" width="1000" height="400"></canvas>
 
   <script>
     async function drawChart() {
-      try {
-        const response = await fetch('data.csv?t=' + new Date().getTime());
-        const csv = await response.text();
-        const rows = csv.trim().split(/\r?\n/);
-        const headers = rows[0].replace(/^\uFEFF/, '').split(',').map(h => h.trim());
+      const response = await fetch('data.csv');
+      const data = await response.text();
 
-        const timestamps = [];
-        const series = [[], [], [], []]; // CRITICAL, HIGH, MEDIUM, LOW
+      const rows = data.split('\n').slice(1).filter(Boolean);
+      const labels = [];
+      const critical = [], high = [], medium = [], low = [];
 
-        for (let i = 1; i < rows.length; i++) {
-          const cells = rows[i].split(',').map(c => c.trim());
-          if (cells.length < 5) continue;
-          timestamps.push(cells[0]);
-          for (let j = 0; j < 4; j++) series[j].push(Number(cells[j+1]));
-        }
-
-        const colors = ['red', 'orange', 'gold', 'green'];
-        const labels = ['Critical', 'High', 'Medium', 'Low'];
-
-        const ctx = document.getElementById('vulnChart').getContext('2d');
-        new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: timestamps,
-            datasets: series.map((data, i) => ({
-              label: labels[i],
-              data,
-              borderColor: colors[i],
-              backgroundColor: colors[i] + '33',
-              fill: true,
-              tension: 0.4,
-              pointRadius: 0
-            }))
-          },
-          options: {
-            scales: {
-              y: {
-                beginAtZero: true,
-                title: { display: true, text: 'Vulnerabilities' }
-              },
-              x: {
-                title: { display: true, text: 'Timestamp' }
-              }
-            },
-            plugins: {
-              legend: { position: 'bottom' }
-            }
-          }
-        });
-      } catch (err) {
-        document.getElementById('error').innerText = "❌ Failed to load or render data: " + err.message;
-        console.error(err);
+      for (const row of rows) {
+        const [timestamp, c, h, m, l] = row.split(',');
+        labels.push(timestamp);
+        critical.push(+c);
+        high.push(+h);
+        medium.push(+m);
+        low.push(+l);
       }
+
+      new Chart(document.getElementById('vulnChart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Critical', data: critical, borderColor: 'red', fill: false },
+            { label: 'High', data: high, borderColor: 'orange', fill: false },
+            { label: 'Medium', data: medium, borderColor: 'gold', fill: false },
+            { label: 'Low', data: low, borderColor: 'green', fill: false },
+          ]
+        },
+        options: {
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
     }
 
     drawChart();
