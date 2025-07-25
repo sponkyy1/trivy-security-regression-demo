@@ -34,3 +34,7 @@ jobs:
         with:
           name: trivy-report
           path: trivy-results/result.json
+
+      - name: Parse Trivy and update CSV
+        run: |
+          python parse_trivy.py
