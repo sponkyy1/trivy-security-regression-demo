@@ -1,6 +1,3 @@
-FROM ubuntu:22.04
+FROM alpine:3.19
 
-RUN apt-get update && apt-get install -y \
-    curl \
-    python3 \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache curl
