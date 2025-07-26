@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Trivy Vulnerability Trends - Lines vs Points</title>
+  <title>Trivy Vulnerability Trends - With Analysis</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -11,6 +11,9 @@
 
   <h2>Trivy Vulnerability Trend (Points Only)</h2>
   <canvas id="chartPoints" width="1000" height="400"></canvas>
+
+  <h3>📉 Vulnerability Improvement Summary</h3>
+  <div id="summary" style="font-family: monospace; white-space: pre-wrap; padding: 1rem; border: 1px solid #ccc; max-width: 800px;"></div>
 
   <script>
     async function fetchData() {
@@ -31,90 +34,127 @@
       return { labels, critical, high, medium, low };
     }
 
-    function createChart(ctxId, showLine = true) {
-      return fetchData().then(({ labels, critical, high, medium, low }) => {
-        const ctx = document.getElementById(ctxId).getContext('2d');
-        new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels,
-            datasets: [
-              {
-                label: 'Critical',
-                data: critical,
-                borderColor: 'red',
-                pointBackgroundColor: 'red',
-                pointRadius: 5,
-                showLine,
-                fill: false
-              },
-              {
-                label: 'High',
-                data: high,
-                borderColor: 'orange',
-                pointBackgroundColor: 'orange',
-                pointRadius: 5,
-                showLine,
-                fill: false
-              },
-              {
-                label: 'Medium',
-                data: medium,
-                borderColor: 'gold',
-                pointBackgroundColor: 'gold',
-                pointRadius: 5,
-                showLine,
-                fill: false
-              },
-              {
-                label: 'Low',
-                data: low,
-                borderColor: 'green',
-                pointBackgroundColor: 'green',
-                pointRadius: 5,
-                showLine,
-                fill: false
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: { position: 'bottom' },
-              tooltip: {
-                callbacks: {
-                  title: function(context) {
-                    return 'Time: ' + context[0].label;
-                  }
-                }
-              }
+    function calculateDiff(first, last) {
+      const diff = last - first;
+      const trend = diff < 0 ? "↓ improved" : diff > 0 ? "↑ worse" : "→ no change";
+      return { diff, trend };
+    }
+
+    function showMathAnalysis(labels, critical, high, medium, low) {
+      if (labels.length < 2) {
+        document.getElementById("summary").textContent = "Not enough scan data to compare.";
+        return;
+      }
+
+      const result = [];
+      const categories = [
+        ["Critical", critical],
+        ["High", high],
+        ["Medium", medium],
+        ["Low", low]
+      ];
+
+      for (const [label, data] of categories) {
+        const { diff, trend } = calculateDiff(data[0], data[data.length - 1]);
+        result.push(`${label.padEnd(8)}: ${data[0]} → ${data[data.length - 1]} (${trend}, Δ = ${diff})`);
+      }
+
+      const totalBefore = critical[0] + high[0] + medium[0] + low[0];
+      const totalAfter = critical.at(-1) + high.at(-1) + medium.at(-1) + low.at(-1);
+      const netChange = totalAfter - totalBefore;
+      const netTrend = netChange < 0 ? "✅ Overall improved" : netChange > 0 ? "⚠️ More vulnerabilities" : "➖ No overall change";
+
+      result.push("");
+      result.push(`Total     : ${totalBefore} → ${totalAfter} (${netTrend}, Δ = ${netChange})`);
+
+      document.getElementById("summary").textContent = result.join("\n");
+    }
+
+    function createChart(ctxId, showLine = true, dataObj) {
+      const ctx = document.getElementById(ctxId).getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: dataObj.labels,
+          datasets: [
+            {
+              label: 'Critical',
+              data: dataObj.critical,
+              borderColor: 'red',
+              pointBackgroundColor: 'red',
+              pointRadius: 5,
+              showLine,
+              fill: false
             },
-            scales: {
-              y: {
-                beginAtZero: true,
-                title: {
-                  display: true,
-                  text: 'Vulnerability Count'
-                }
-              },
-              x: {
-                title: {
-                  display: true,
-                  text: 'Timestamp'
-                },
-                ticks: {
-                  maxRotation: 0,
-                  minRotation: 0
+            {
+              label: 'High',
+              data: dataObj.high,
+              borderColor: 'orange',
+              pointBackgroundColor: 'orange',
+              pointRadius: 5,
+              showLine,
+              fill: false
+            },
+            {
+              label: 'Medium',
+              data: dataObj.medium,
+              borderColor: 'gold',
+              pointBackgroundColor: 'gold',
+              pointRadius: 5,
+              showLine,
+              fill: false
+            },
+            {
+              label: 'Low',
+              data: dataObj.low,
+              borderColor: 'green',
+              pointBackgroundColor: 'green',
+              pointRadius: 5,
+              showLine,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'bottom' },
+            tooltip: {
+              callbacks: {
+                title: function(context) {
+                  return 'Time: ' + context[0].label;
                 }
               }
             }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Vulnerability Count'
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Timestamp'
+              },
+              ticks: {
+                maxRotation: 0,
+                minRotation: 0
+              }
+            }
           }
-        });
+        }
       });
     }
 
-    createChart('chartLines', true);
-    createChart('chartPoints', false);
+    fetchData().then(data => {
+      createChart('chartLines', true, data);
+      createChart('chartPoints', false, data);
+      showMathAnalysis(data.labels, data.critical, data.high, data.medium, data.low);
+    });
   </script>
 </body>
 </html>
