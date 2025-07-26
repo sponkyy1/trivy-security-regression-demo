@@ -1,13 +1,9 @@
-FROM python:3.6-slim
+FROM ubuntu:18.04
 
 RUN apt-get update && apt-get install -y \
     curl \
     wget \
+    git \
+    python2.7 \
+    libssl1.0-dev \
     && rm -rf /var/lib/apt/lists/*
-
-RUN pip install flask==1.0.2 requests==2.19.1
-
-COPY app.py /app/app.py
-
-WORKDIR /app
-CMD ["python", "app.py"]
